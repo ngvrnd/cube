@@ -48,7 +48,7 @@ void ser_deb() {
 
 #define NUM_LEDS 64
 
-#define BRIGHTNESS 10
+#define BRIGHTNESS 255
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, PIN, NEO_GRBW + NEO_KHZ800);
 Adafruit_NeoPixel strip2 = Adafruit_NeoPixel(NUM_LEDS, PIN+1, NEO_GRBW + NEO_KHZ800);
@@ -109,8 +109,54 @@ void setup() {
 uint8_t intensit = 0;
 uint8_t increment = 1;
 
+const unsigned int clrMax = 128;
+
+bool first = true;
+
+uint8_t mapXYtoI(uint8_t x, uint8_t y) {
+  return (y + 8*x);
+}
 
 void loop() {
+
+  if (first) {
+
+    first = false;
+    uint32_t colorval;
+    
+    colorval = strip.Color(intensit, 0, clrMax-intensit,0);
+    //strip.setPixelColor(32, colorval);
+    strip.setPixelColor(mapXYtoI(2,3), colorval);  
+    strip.setPixelColor(28, colorval);
+    strip.setPixelColor(35, colorval);  
+    strip.setPixelColor(36, colorval);
+    strip2.setPixelColor(0, colorval);  
+    strip3.setPixelColor(0, 0, 0, 0, 10);
+  
+  //  uint32_t * pixels = (uint32_t *)strip.getPixels();
+  
+   // pixels[10] = strip.Color(0,30,0,0);
+    
+    if (intensit == clrMax) increment = -1;
+    else if (intensit == 0) increment = 1;
+  
+    intensit += increment;
+    delay(1);
+    
+    strip.show();
+    strip2.show();
+    strip3.show();
+//  strip4.show();
+//  strip5.show();
+//  strip6.show();
+//  
+    
+  }
+  
+  //gyroloop();
+}
+
+void gyroloop() {
   float gx, gy, gz; //scaled Gyro values
 
   // read gyro measurements from device, scaled to the configured range
