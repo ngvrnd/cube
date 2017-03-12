@@ -50,12 +50,20 @@ void ser_deb() {
 
 #define BRIGHTNESS 255
 
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, PIN, NEO_GRBW + NEO_KHZ800);
-Adafruit_NeoPixel strip2 = Adafruit_NeoPixel(NUM_LEDS, PIN+1, NEO_GRBW + NEO_KHZ800);
-Adafruit_NeoPixel strip3 = Adafruit_NeoPixel(NUM_LEDS, PIN+2, NEO_GRBW + NEO_KHZ800);
-Adafruit_NeoPixel strip4 = Adafruit_NeoPixel(NUM_LEDS, PIN+3, NEO_GRBW + NEO_KHZ800);
-Adafruit_NeoPixel strip5 = Adafruit_NeoPixel(NUM_LEDS, PIN+4, NEO_GRBW + NEO_KHZ800);
-Adafruit_NeoPixel strip6 = Adafruit_NeoPixel(NUM_LEDS, PIN+5, NEO_GRBW + NEO_KHZ800);
+//Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, PIN, NEO_GRBW + NEO_KHZ800);
+//Adafruit_NeoPixel strip2 = Adafruit_NeoPixel(NUM_LEDS, PIN+1, NEO_GRBW + NEO_KHZ800);
+//Adafruit_NeoPixel strip3 = Adafruit_NeoPixel(NUM_LEDS, PIN+2, NEO_GRBW + NEO_KHZ800);
+//Adafruit_NeoPixel strip4 = Adafruit_NeoPixel(NUM_LEDS, PIN+3, NEO_GRBW + NEO_KHZ800);
+//Adafruit_NeoPixel strip5 = Adafruit_NeoPixel(NUM_LEDS, PIN+4, NEO_GRBW + NEO_KHZ800);
+//Adafruit_NeoPixel strip6 = Adafruit_NeoPixel(NUM_LEDS, PIN+5, NEO_GRBW + NEO_KHZ800);
+
+Adafruit_NeoPixel faces[6] = {Adafruit_NeoPixel(NUM_LEDS, PIN+0, NEO_GRBW + NEO_KHZ800),
+                              Adafruit_NeoPixel(NUM_LEDS, PIN+1, NEO_GRBW + NEO_KHZ800),
+                              Adafruit_NeoPixel(NUM_LEDS, PIN+1, NEO_GRBW + NEO_KHZ800),
+                              Adafruit_NeoPixel(NUM_LEDS, PIN+1, NEO_GRBW + NEO_KHZ800),
+                              Adafruit_NeoPixel(NUM_LEDS, PIN+1, NEO_GRBW + NEO_KHZ800),
+                              Adafruit_NeoPixel(NUM_LEDS, PIN+1, NEO_GRBW + NEO_KHZ800)};
+
 
 float ax, ay, az;
 const float aMax = 2;
@@ -89,21 +97,12 @@ void setup() {
   CurieIMU.setAccelerometerRate(1600);
   CurieIMU.setAccelerometerRange(aMax);
 
-  strip.setBrightness(BRIGHTNESS);
-  strip.begin();
-  strip.show(); // Initialize all pixels to 'off
-    
-  strip2.setBrightness(BRIGHTNESS);
-  strip2.begin();
-  strip2.show(); // Initialize all pixels to 'off
-    
-  strip3.setBrightness(BRIGHTNESS);
-  strip3.begin();
-  strip3.show(); // Initialize all pixels to 'off
-  
-  strip4.setBrightness(BRIGHTNESS);
-  strip4.begin();
-  strip4.show(); // Initialize all pixels to 'off
+  for (int i = 0; i < 6; ++i) {
+    faces[i].setBrightness(BRIGHTNESS);
+    faces[i].begin();
+    faces[i].show(); // Initialize all pixels to 'off
+  }
+
 }
 
 uint8_t intensit = 0;
@@ -117,134 +116,43 @@ uint8_t mapXYtoI(uint8_t x, uint8_t y) {
   return (y + 8*x);
 }
 
+uint32_t color = strip.Color(cx, cy, cz, i_aMag);
+int state = 0;
+int pixelIdx = 0;
+int face = 0;
+bool running = true;
+
 void loop() {
+  
+  switch (state) {
+    case 0:
+      if (pixelIdx < 8) {
+        faces[face].setPixelColor(pixelIdx, color);
+      } else {
+        pixelIdx = 0;
+        state ++;
+        face ++;
+      }
+      break;
+    case 1:
+      if (pixelIdx < 8) {
+        faces[face].setPixelColor(pixelIdx, color);
+      } else {
+        pixelIdx = 0;
+        state ++;
+        face ++;
+      }
 
-  if (first) {
-
-    first = false;
-    uint32_t colorval;
-    
-    colorval = strip.Color(intensit, 0, clrMax-intensit,0);
-    //strip.setPixelColor(32, colorval);
-    strip.setPixelColor(mapXYtoI(2,3), colorval);  
-    strip.setPixelColor(28, colorval);
-    strip.setPixelColor(35, colorval);  
-    strip.setPixelColor(36, colorval);
-    strip2.setPixelColor(0, colorval);  
-    strip3.setPixelColor(0, 0, 0, 0, 10);
-  
-  //  uint32_t * pixels = (uint32_t *)strip.getPixels();
-  
-   // pixels[10] = strip.Color(0,30,0,0);
-    
-    if (intensit == clrMax) increment = -1;
-    else if (intensit == 0) increment = 1;
-  
-    intensit += increment;
-    delay(1);
-    
-    strip.show();
-    strip2.show();
-    strip3.show();
-//  strip4.show();
-//  strip5.show();
-//  strip6.show();
-//  
-    
+      break;  
+    default:
+    if (running) {
+      pixelIdx = state = face = 0;      
+    }
   }
   
-  //gyroloop();
-}
-
-void gyroloop() {
-  float gx, gy, gz; //scaled Gyro values
-
-  // read gyro measurements from device, scaled to the configured range
-  CurieIMU.readGyroScaled(gx, gy, gz);
-
-  if (abs(gx) > 1) {
-    cx = min(int(abs(gx)),255);
-  } else if (cx >0) {
-    cx--;
+  if (running) {
+    faces[face].show()
   }
-  if (abs(gy) > 1) {
-    cy = min(int(abs(gy)),255);
-  } else if (cy >0) {
-    cy--;
-  }
-  if (abs(gz) > 1) {
-    cz = min(int(abs(gz)),255);
-  } else if (cz >0) {
-    cz--;
-  }
-
-  CurieIMU.readAccelerometerScaled(ax, ay, az);
-
-  float aMag = sqrt(sq(ax)+sq(ay)+sq(az));
-  if (aMag > 0) {
-
-    aMag /= aMagMax;
-    aMag *= 10;
-  } else {
-    aMag -= 1;
-  }
-  uint8_t i_aMag = int(aMag);
-  
-#ifdef SER_DEB
-  ser_deb();
-#endif
-
-//  for (int i = 0; i < 64; i++) {
-//    strip.setPixelColor(i, strip.Color(0,0,0,0));
-//    strip2.setPixelColor(i, strip.Color(0,0,0,0));
-//    strip3.setPixelColor(i, strip.Color(0,0,0,0));
-//    strip4.setPixelColor(i, strip.Color(0,0,0,0));
-//    strip5.setPixelColor(i, strip.Color(0,0,0,0));
-//    strip6.setPixelColor(i, strip.Color(0,0,0,0));
-//   }
-
-//  Serial.println(intensit);
-
-  uint32_t color = strip.Color(cx, cy, cz, i_aMag);
-  for (int i = 0; i < 64; i++) {
-    strip.setPixelColor(i, color);
-    strip2.setPixelColor(i, color);
-    strip3.setPixelColor(i, color);
-    strip4.setPixelColor(i, color);
-    strip5.setPixelColor(i, color);
-    strip6.setPixelColor(i, color);
-   }
-
-  color = strip.Color(cz, cx, cy, i_aMag/2);
-  strip.setPixelColor((i)%64, color);
-  strip.setPixelColor((i)%64, color);
-  strip2.setPixelColor((i)%64, color);
-  strip3.setPixelColor((i)%64, color);
-  strip4.setPixelColor((i)%64, color);
-  strip5.setPixelColor((i)%64, color);  
-  strip6.setPixelColor((i++)%64, color);
-
-
-//  strip.setPixelColor((i)%64, color);
-//  strip.setPixelColor((i)%64, color);
-//  strip2.setPixelColor((i)%64, color);
-//  strip3.setPixelColor((i)%64, color);
-//  strip4.setPixelColor((i)%64, color);
-//  strip5.setPixelColor((i)%64, color);  
-//  strip6.setPixelColor((i++)%64, color);
- 
- delay(100);
-//  if (intensit == 40) increment = -1;
-//  else if (intensit == 0) increment = 1;
-//  intensit += increment;
-  
-  strip.show();
-  strip2.show();
-  strip3.show();
-  strip4.show();
-  strip5.show();
-  strip6.show();
-  
 }
 
 /*
