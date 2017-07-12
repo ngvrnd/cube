@@ -77,7 +77,7 @@ void ser_deb() {
 
 uint32_t color = 0;
 int state = 0;
-int pixelIdx = 0;
+size_t pixelIdx = 0;
 int face = 0;
 bool running = true;
 float gx, gy, gz; //scaled Gyro values
@@ -88,7 +88,7 @@ uint8_t mapXYtoI(uint8_t x, uint8_t y) {
 }
 
 void setup() {
-#define SER_D//EB_init
+#define SER//_DEB_init
 #ifdef SER_DEB_init
   Serial.begin(38400); // initialize Serial communication
   while (!Serial);    // wait for the serial port to open
@@ -97,109 +97,130 @@ void setup() {
   Serial.println("Initializing IMU device...");
 #endif
 
-  CurieIMU.begin();
-
-  // Set the accelerometer range to 250 degrees/second
-  CurieIMU.setGyroRange(250);
-  CurieIMU.setGyroRate(3200);
-  CurieIMU.setAccelerometerRate(1600);
-  CurieIMU.setAccelerometerRange(aMax);
-
+//  CurieIMU.begin();
+//
+//  // Set the accelerometer range to 250 degrees/second
+//  CurieIMU.setGyroRange(250);
+//  CurieIMU.setGyroRate(3200);
+//  CurieIMU.setAccelerometerRate(1600);
+//  CurieIMU.setAccelerometerRange(aMax);
+//
   for (int i = 0; i < 6; ++i) {
     faces[i].setBrightness(BRIGHTNESS);
     faces[i].begin();
     faces[i].show(); // Initialize all pixels to 'off
   }
-
-  CurieIMU.autoCalibrateGyroOffset();
-  CurieIMU.autoCalibrateAccelerometerOffset(X_AXIS, 0);
-  CurieIMU.autoCalibrateAccelerometerOffset(Y_AXIS, 0);
-  CurieIMU.autoCalibrateAccelerometerOffset(Z_AXIS, -1);
-
-  pixelIdx = 7;
+//
+//  CurieIMU.autoCalibrateGyroOffset();
+//  CurieIMU.autoCalibrateAccelerometerOffset(X_AXIS, 0);
+//  CurieIMU.autoCalibrateAccelerometerOffset(Y_AXIS, 0);
+//  CurieIMU.autoCalibrateAccelerometerOffset(Z_AXIS, -1);
+//
+//  pixelIdx = 7;
 
 }
 
-
+  const size_t trajLen = 23;
+  uint8_t px[trajLen] = {1,2,3,4,5,6,7,0,7,7,7,7,7,7,7,7,0,0,0,0,0,0,0};
+  uint8_t py[trajLen] = {1,2,3,4,5,6,7,0,0,1,2,3,4,5,6,7,1,2,3,4,5,6,7}; 
+  
 void loop() {
 
-  // read gyro measurements from device, scaled to the configured range
-  CurieIMU.readGyroScaled(gx, gy, gz);
-
-  float tmp = min(int(abs(gx)),255);
-  
-  if ((abs(gx) > 1) && (tmp > cx)) {
-    cx = tmp;
-  } else if (cx >0) {
-    cx--;
-  }
-  
-  tmp = min(int(abs(gy)),255);
-  
-  if ((abs(gy) > 1) && (tmp > cy)) {
-    cy = tmp;
-  } else if (cy >0) {
-    cy--;
-  }
-
-  tmp = min(int(abs(gz)),255);
-  
-  if ((abs(gz) > 1) && (tmp > cz)) {
-    cz = tmp;
-  } else if (cz >0) {
-    cz--;
-  }
-
-  CurieIMU.readAccelerometerScaled(ax, ay, az);
-
-  delay(100);
-  
+//  // read gyro measurements from device, scaled to the configured range
+//  CurieIMU.readGyroScaled(gx, gy, gz);
+//
+//  float tmp = min(int(abs(gx)),255);
+////  
+//  if ((abs(gx) > 1) && (tmp > cx)) {
+//    cx = tmp;
+//  } else if (cx > 0) {
+//    cx--;
+//  }
+//  
+//  tmp = min(int(abs(gy)),255);
+//  
+//  if ((abs(gy) > 1) && (tmp > cy)) {
+//    cy = tmp;
+//  } else if (cy > 0) {
+//    cy--;
+//  }
+//
+//  tmp = min(int(abs(gz)),255);
+//  
+//  if ((abs(gz) > 1) && (tmp > cz)) {
+//    cz = tmp;
+//  } else if (cz >0) {
+//    cz--;
+//  }
+//
+//  CurieIMU.readAccelerometerScaled(ax, ay, az);
+//
+//  delay(10);
+//  
 //  ser_deb();
-  
-  color = faces[face].Color(cx, cy, cz, 0);
+
+
+  //color = faces[face].Color(cx, cy, cz, 0);
+  color = faces[0].Color(10,5,40,1);
   
   switch (state) {
     case 0:
-      if (pixelIdx >= 0) {
+      if (pixelIdx < trajLen) {
         
-        faces[face].setPixelColor(pixelIdx--, color);
+        faces[face].setPixelColor(mapXYtoI(px[pixelIdx], py[pixelIdx]), color);
+        pixelIdx++;
         
       } else {
+//        Serial.println("state 0 -> state 1");
+        delay(100);
         pixelIdx = 0;
         state ++;
-        face ++;
       }
       break;
     case 1:
-      if (pixelIdx < 8) {
+      if (pixelIdx < trajLen) {
         
-        faces[face].setPixelColor(pixelIdx++, color);
+        faces[face].setPixelColor(mapXYtoI(px[pixelIdx], py[pixelIdx]), 0);
+        pixelIdx++;
         
       } else {
+//        Serial.println("state 1 -> state 2");
+        faces[face].show();
+        delay(100);
         pixelIdx = 0;
         state ++;
-        face ++;
       }
       break;  
     case 2:
-      if (pixelIdx < 8) {
-        faces[face].setPixelColor(pixelIdx++, color);
+      if (pixelIdx < trajLen) {
+        
+        faces[face].setPixelColor(mapXYtoI(px[pixelIdx], py[pixelIdx]), color);
+        pixelIdx++;
+      
       } else {
+//        Serial.println("state 2 -> state 3");        
+        faces[face].show();
+        delay(100);
         pixelIdx = 0;
         state ++;
-        face ++;
       }
       break;  
     default:
-    if (running) {
-      pixelIdx = 7;
-      state = face = 0;      
-    }
+//      Serial.println(" default state - > state 0");
+      delay(100);
+      if (running) {
+        pixelIdx = 0;
+        face++;
+        if (face == 3) face = 0;
+        state = 0;      
+        faces[face].show();
+      }
   }
-  Serial.println();
-  if (running) {
-    faces[face].show();
-  }
+//  Serial.println(state);
+//  Serial.println("Bottom of loop");
+//  delay(100);
+//  if (running) {
+//  }
 }
 
 /*1
