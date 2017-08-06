@@ -1,12 +1,4 @@
-/*
- * Copyright (c) 2016 Intel Corporation.  All rights reserved.
- * See the bottom of this file for the license terms.
- */
 
-/*
-   This sketch example demonstrates how the BMI160 on the
-   Intel(R) Curie(TM) module can be used to read gyroscope data
-*/
 
 #include "CurieIMU.h"
 #include <Adafruit_NeoPixel.h>
